@@ -10,7 +10,7 @@
 // Date			02/01/2018 21:28
 // Version		0.0.3
 //
-// Copyright	© Marcin Pierzchała, Tomasz Trela, Jakub Cholewka, 2017-2018
+// Copyright	© Marcin Pierzchała, Tomasz Trela, Jakub Cholewka, 2018
 // Licence		licence
 //
 // See         ReadMe.txt for references
@@ -43,7 +43,7 @@
 #define PIN_TX    7
 #define PIN_RX    8
 #define BAUDRATE  9600
-#define PHONE_NUMBER "+607570366"
+#define PHONE_NUMBER "+XXXXXXXXX"
 #define MESSAGETEMP  "Temperatura za niska."
 #define MESSAGEPOWER "Brak zasilania."
 #define MESSAGEPOWERBACK "Zasilanie wrocilo."
