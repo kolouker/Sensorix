@@ -120,11 +120,21 @@ float outputTemperature(DeviceAddress deviceAddress)
 void printTemperature(float tempC) {
     Serial.println("Temperatura: ");
     Serial.print(tempC);
-    lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Temperatura: ");
-    lcd.setCursor(0, 1);
+    lcd.print((char)223);
+    lcd.print("C");
     lcd.print(tempC);
+}
+
+void printNoPower() {
+    lcd.setCursor(0, 1);
+    lcd.print("Brak zasilania.");
+}
+
+void printPowerOk(){
+    lcd.setCursor(0, 1);
+    lcd.print("Zasilanie OK.  ");
 }
 
 void powerUp()
@@ -210,12 +220,13 @@ void loop(void)
             Serial.println("Voltage is 0.");
             if(powerMessageSent == false){
                 sendMessagePower();
+                printNoPower();
                 powerMessageSent = true;
             }
         }
         else
         {
-            
+            printPowerOk();
             hasPower = true;
         }
     }
