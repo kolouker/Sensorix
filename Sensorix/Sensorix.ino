@@ -179,10 +179,9 @@ void sendMessage(String message)
     }
     Serial.println("gprs init success");
     Serial.println("sending message ...");
-    int buff = message.length()+1;
-    char cMessage[buff];
-    message.toCharArray(cMessage, buff);
-    gprsTest.sendSMS(PHONE_NUMBER,message); //define phone number and text
+    char cMessage[50];
+    message.toCharArray(cMessage, sizeof(cMessage));
+    gprsTest.sendSMS(PHONE_NUMBER, cMessage); //define phone number and text
 }
 
 /*
