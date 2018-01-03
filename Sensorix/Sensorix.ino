@@ -44,10 +44,10 @@
 #define PIN_TX    7
 #define PIN_RX    8
 #define BAUDRATE  9600
-#define PHONE_NUMBER "+XXXXXXXXX"
-#define MESSAGETEMP  "Temperatura za niska."
-#define MESSAGEPOWER "Brak zasilania."
-#define MESSAGEPOWERBACK "Zasilanie wrocilo."
+#define PHONE_NUMBER "XXXXXXXXX"
+#define MESSAGETEMP  "TEMPERATURA ZA NISKA."
+#define MESSAGEPOWER "BRAK ZASILANIA."
+#define MESSAGEPOWERBACK "ZASILANIE WROCILO."
 #define MESSAGE_LENGTH 160
 
 //flags:
@@ -59,7 +59,7 @@ bool hasPower = true;
 float tolerance1 = 13.0; //set minimum temperature here
 float tolerance2 = 20.0; //not used
 int delayTime = 5000; //delay of the main loop in miliseconds, 300k - 5 minutes
-int powerDelay = 180000; // 180k = 3 minutes
+unsigned int powerDelay = 10000; // delay for the voltage checking sub-loop, 180k = 3 minutes
 int defaultCycles = 360; //number of cycles
 int resetCycles = defaultCycles;
 float tempLog[30];
@@ -111,32 +111,47 @@ void setup() {
     lcd.begin(16, 2);
 }
 
-// function to print the temperature for a device
+// Function used to obtain temperature reading from sensor.
+
 float outputTemperature(DeviceAddress deviceAddress)
 {
     float tempC = sensors.getTempC(deviceAddress);
     return tempC;
 }
 
+// Function used to obtain voltage reading from sensor.
+float getVoltage() {
+    int vt_read = analogRead(VT_PIN);
+    float voltage = vt_read * (5.0 / 1024.0) * 5.0;
+    return voltage;
+}
+
+
+// Functions used to print messages on LCD.
+
 void printTemperature(float tempC) {
-    Serial.println("Temperatura: ");
+    Serial.println("Temp: ");
     Serial.print(tempC);
     lcd.setCursor(0, 0);
-    lcd.print("Temperatura: ");
+    lcd.print("Temp: ");
+    lcd.print(tempC);
+    lcd.print(" ");
     lcd.print((char)223);
     lcd.print("C");
-    lcd.print(tempC);
 }
 
 void printNoPower() {
     lcd.setCursor(0, 1);
-    lcd.print("Brak zasilania.");
+    lcd.print("BRAK ZASILANIA!");
 }
 
 void printPowerOk(){
     lcd.setCursor(0, 1);
     lcd.print("Zasilanie OK.  ");
 }
+
+
+// Functions used by GSM Module.
 
 void powerUp()
 // software equivalent of pressing the GSM shield "power" button
@@ -157,7 +172,7 @@ void sendMessageTemp()
 {
     //GPS module
     while(!gprsTest.init()) {
-        delay(1000);
+        delay(powerDelay);
         Serial.print("init error\r\n");
     }
     Serial.println("gprs init success");
@@ -189,46 +204,86 @@ void sendMessagePowerBack()
 }
 
 /*
- * Main function. It requests the tempC from the sensors and display on Serial.
+ Functions for future use
+ 
+ void executeCommand(char message)
+ {
+ 
+ }
+ 
+ void getLog(void)
+ {
+ 
+ }
+ void getStatus(void)
+ {
+ 
+ }
+ void changeTemp1(float temp)
+ {
+ tolerance1 = temp;
+ }
+ void changeTemp2(float temp)
+ {
+ tolerance2 = temp;
+ }
+ void changeDelay(int dTime)
+ {
+ delayTime = dTime;
+ }
  */
+
+/*
+ * Main function.
+ * Requests the tempC from the sensors and display on Serial.
+ * Checks voltage reading
+ * Prints relevant info to LCD and sends Text messages using GSM.
+ */
+
 void loop(void)
 {
     Serial.println(resetCycles);
     if (resetCycles == 0){
         resetCycles = defaultCycles;
         tempMessageSent = false;
-        powerMessageSent = false;
     } else {
         resetCycles--;
-        
     }
     
-    
-    
-    //turn on gps shield if not turned on
+    //Turn on GPS shield if not turned on
     powerUp();
     
-    //check if it has power
-    int vt_read = analogRead(VT_PIN);
-    float voltage = vt_read * (5.0 / 1024.0) * 5.0;
-    Serial.println("Checking voltage.");
-    if (voltage == 0)
+    // Voltage check sub-loop
+    String voltage = String(getVoltage());
+    Serial.println("Current voltage is: "+voltage);
+    if (getVoltage() == 0)
     {
-        delay(180000);
-        if (voltage == 0)
+        Serial.println("No voltage detected. Waiting for delay.");
+        printNoPower();
+        delay(powerDelay);
+        Serial.println("Delay finished");
+        if (getVoltage() == 0)
         {
             hasPower = false;
-            Serial.println("Voltage is 0.");
+            voltage = String(getVoltage());
+            Serial.println("Current voltage is: "+voltage);
             if(powerMessageSent == false){
                 sendMessagePower();
-                printNoPower();
                 powerMessageSent = true;
             }
         }
         else
         {
-            printPowerOk();
             hasPower = true;
+        }
+    }
+    else
+    {
+        printPowerOk();
+        if(powerMessageSent == true){
+            Serial.println("Voltage is back");
+            sendMessagePowerBack();
+            powerMessageSent = false;
         }
     }
     
@@ -255,53 +310,9 @@ void loop(void)
     
     if (tempC < tolerance1 && tempMessageSent == false)
     {
-        sendMessageTemp()();
+        sendMessageTemp();
         tempMessageSent = true;
     }
     
     delay(delayTime);
 }
-
-
-
-
-void executeCommand(char message)
-{
-    
-    
-}
-
-
-
-void getLog(void)
-{
-    
-}
-void getStatus(void)
-{
-    
-}
-void changeTemp1(float temp)
-{
-    tolerance1 = temp;
-}
-void changeTemp2(float temp)
-{
-    tolerance2 = temp;
-}
-void changeDelay(int dTime)
-{
-    delayTime = dTime;
-}
-
-
-/*
- // function to print a device address
- void printAddress(DeviceAddress deviceAddress)
- {
- for (uint8_t i = 0; i < 8; i++)
- {
- if (deviceAddress[i] < 16) Serial.print("0");
- Serial.print(deviceAddress[i], HEX);
- }
- }*/
