@@ -123,8 +123,9 @@ void printTemperature(float tempC) {
     lcd.setCursor(0, 0);
     lcd.print("Temp: ");
     lcd.print(tempC);
+    lcd.print(" ");
     lcd.print((char)223);
-    lcd.print(" C");
+    lcd.print("C");
     
 }
 
@@ -208,7 +209,7 @@ void loop(void)
     //turn on gps shield if not turned on
     powerUp();
     
-    //check if it has power
+    //check if there is power
     int vt_read = analogRead(VT_PIN);
     float voltage = vt_read * (5.0 / 1024.0) * 5.0;
     Serial.println("Checking voltage.");
