@@ -43,7 +43,7 @@
 #define PIN_TX    7
 #define PIN_RX    8
 #define BAUDRATE  9600
-#define PHONE_NUMBER "+XXXXXXXXX"
+#define PHONE_NUMBER "607570366"
 #define MESSAGETEMP  "Temperatura za niska."
 #define MESSAGEPOWER "Brak zasilania."
 #define MESSAGEPOWERBACK "Zasilanie wrocilo."
@@ -118,13 +118,14 @@ float outputTemperature(DeviceAddress deviceAddress)
 }
 
 void printTemperature(float tempC) {
-    Serial.println("Temperatura: ");
+    Serial.println("Temp: ");
     Serial.print(tempC);
     lcd.setCursor(0, 0);
-    lcd.print("Temperatura: ");
-    lcd.print((char)223);
-    lcd.print("C");
+    lcd.print("Temp: ");
     lcd.print(tempC);
+    lcd.print((char)223);
+    lcd.print(" C");
+    
 }
 
 void printNoPower() {
@@ -213,6 +214,8 @@ void loop(void)
     Serial.println("Checking voltage.");
     if (voltage == 0)
     {
+        Serial.println("dupa");
+        printNoPower();
         delay(180000);
         if (voltage == 0)
         {
@@ -220,15 +223,17 @@ void loop(void)
             Serial.println("Voltage is 0.");
             if(powerMessageSent == false){
                 sendMessagePower();
-                printNoPower();
                 powerMessageSent = true;
             }
         }
         else
         {
-            printPowerOk();
             hasPower = true;
         }
+    }
+    else
+    {
+        printPowerOk();
     }
     
     // Check received messages, delete messages
@@ -254,7 +259,7 @@ void loop(void)
     
     if (tempC < tolerance1 && tempMessageSent == false)
     {
-        sendMessageTemp()();
+        sendMessageTemp();
         tempMessageSent = true;
     }
     
