@@ -1,4 +1,5 @@
 //
+//
 // Sensorix
 //
 // Description of the project
@@ -44,9 +45,6 @@
 #define PIN_RX    8
 #define BAUDRATE  9600
 #define PHONE_NUMBER "XXXXXXXXX"
-#define MESSAGETEMP  "TEMPERATURA ZA NISKA."
-#define MESSAGEPOWER "BRAK ZASILANIA."
-#define MESSAGEPOWERBACK "ZASILANIE WROCILO."
 #define MESSAGE_LENGTH 160
 
 //flags:
@@ -68,6 +66,11 @@ char message[MESSAGE_LENGTH];
 int messageIndex = 0;
 char phone[13];
 char datetime[24];
+
+//messages
+const String messageLowTemp = "TEMPERATURA ZA NISKA.";
+const String messageNoPower = "BRAK ZASILANIA.";
+const String messagePowerBack = "ZASILANIE WROCILO.";
 
 //lcd
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
@@ -119,10 +122,10 @@ float outputTemperature(DeviceAddress deviceAddress)
 }
 
 // Function used to obtain voltage reading from sensor.
-float getVoltage() {
+String getVoltage() {
     int vt_read = analogRead(VT_PIN);
     float voltage = vt_read * (5.0 / 1024.0) * 5.0;
-    return voltage;
+    return String(voltage);
 }
 
 
@@ -167,7 +170,7 @@ void powerUp()
     }
 }
 
-void sendMessageTemp()
+void sendMessage(String message)
 {
     //GPS module
     while(!gprsTest.init()) {
@@ -176,30 +179,7 @@ void sendMessageTemp()
     }
     Serial.println("gprs init success");
     Serial.println("sending message ...");
-    gprsTest.sendSMS(PHONE_NUMBER,MESSAGETEMP); //define phone number and text
-}
-void sendMessagePower()
-{
-    //GPS module
-    while(!gprsTest.init()) {
-        delay(1000);
-        Serial.print("init error\r\n");
-    }
-    Serial.println("gprs init success");
-    Serial.println("sending message ...");
-    gprsTest.sendSMS(PHONE_NUMBER,MESSAGEPOWER); //define phone number and text
-}
-
-void sendMessagePowerBack()
-{
-    //GPS module
-    while(!gprsTest.init()) {
-        delay(1000);
-        Serial.print("init error\r\n");
-    }
-    Serial.println("gprs init success");
-    Serial.println("sending message ...");
-    gprsTest.sendSMS(PHONE_NUMBER,MESSAGEPOWERBACK); //define phone number and text
+    gprsTest.sendSMS(PHONE_NUMBER,message); //define phone number and text
 }
 
 /*
@@ -253,21 +233,21 @@ void loop(void)
     powerUp();
     
     // Voltage check sub-loop
-    String voltage = String(getVoltage());
-    Serial.println("Current voltage is: "+voltage);
-    if (getVoltage() == 0)
+    String voltage = getVoltage();
+    Serial.println("Current voltage is: "  + voltage);
+    if (voltage == 0)
     {
         Serial.println("No voltage detected. Waiting for delay.");
         printNoPower();
         delay(powerDelay);
         Serial.println("Delay finished");
-        if (getVoltage() == 0)
+        voltage = getVoltage();
+        if (voltage == 0)
         {
             hasPower = false;
-            voltage = String(getVoltage());
-            Serial.println("Current voltage is: "+voltage);
+            Serial.println("Current voltage is: " + voltage);
             if(powerMessageSent == false){
-                sendMessagePower();
+                sendMessage(messageNoPower);
                 powerMessageSent = true;
             }
         }
@@ -281,7 +261,7 @@ void loop(void)
         printPowerOk();
         if(powerMessageSent == true){
             Serial.println("Voltage is back");
-            sendMessagePowerBack();
+            sendMessage(messagePowerBack);
             powerMessageSent = false;
         }
     }
@@ -309,7 +289,7 @@ void loop(void)
     
     if (tempC < tolerance1 && tempMessageSent == false)
     {
-        sendMessageTemp();
+        sendMessage(messageLowTemp);
         tempMessageSent = true;
     }
     
