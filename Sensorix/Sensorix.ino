@@ -120,10 +120,10 @@ float outputTemperature(DeviceAddress deviceAddress)
 }
 
 // Function used to obtain voltage reading from sensor.
-float getVoltage() {
+String getVoltage() {
     int vt_read = analogRead(VT_PIN);
     float voltage = vt_read * (5.0 / 1024.0) * 5.0;
-    return voltage;
+    return String(voltage);
 }
 
 
@@ -254,19 +254,19 @@ void loop(void)
     powerUp();
     
     // Voltage check sub-loop
-    String voltage = String(getVoltage());
-    Serial.println("Current voltage is: "+voltage);
-    if (getVoltage() == 0)
+    String voltage = getVoltage();
+    Serial.println("Current voltage is: "  + voltage);
+    if (voltage == 0)
     {
         Serial.println("No voltage detected. Waiting for delay.");
         printNoPower();
         delay(powerDelay);
         Serial.println("Delay finished");
-        if (getVoltage() == 0)
+        voltage = getVoltage();
+        if (voltage == 0)
         {
             hasPower = false;
-            voltage = String(getVoltage());
-            Serial.println("Current voltage is: "+voltage);
+            Serial.println("Current voltage is: " + voltage);
             if(powerMessageSent == false){
                 sendMessagePower();
                 powerMessageSent = true;
