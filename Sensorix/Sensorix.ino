@@ -58,7 +58,7 @@ bool hasPower = true;
 float tolerance1 = 13.0; //set minimum temperature here
 float tolerance2 = 20.0; //not used
 int delayTime = 5000; //delay of the main loop in miliseconds, 300k - 5 minutes
-int powerDelay = 180000; // 180k = 3 minutes
+unsigned int powerDelay = 10000; // 180k = 3 minutes
 int defaultCycles = 360; //number of cycles
 int resetCycles = defaultCycles;
 float tempLog[30];
@@ -129,6 +129,12 @@ void printTemperature(float tempC) {
     
 }
 
+float getVoltage() {
+    int vt_read = analogRead(VT_PIN);
+    float voltage = vt_read * (5.0 / 1024.0) * 5.0;
+    return voltage;
+}
+
 void printNoPower() {
     lcd.setCursor(0, 1);
     lcd.print("Brak zasilania.");
@@ -158,7 +164,7 @@ void sendMessageTemp()
 {
     //GPS module
     while(!gprsTest.init()) {
-        delay(1000);
+        delay(powerDelay);
         Serial.print("init error\r\n");
     }
     Serial.println("gprs init success");
@@ -198,30 +204,28 @@ void loop(void)
     if (resetCycles == 0){
         resetCycles = defaultCycles;
         tempMessageSent = false;
-        powerMessageSent = false;
+        //powerMessageSent = false;
     } else {
         resetCycles--;
-        
     }
     
-    
-    
-    //turn on gps shield if not turned on
+    //Turn on gps shield if not turned on
     powerUp();
     
-    //check if there is power
-    int vt_read = analogRead(VT_PIN);
-    float voltage = vt_read * (5.0 / 1024.0) * 5.0;
-    Serial.println("Checking voltage.");
-    if (voltage == 0)
+    // Power check sub-loop
+    String voltage = String(getVoltage());
+    Serial.println("Current voltage is: "+voltage);
+    if (getVoltage() == 0)
     {
-        Serial.println("dupa");
+        Serial.println("Brak zasilania. Czekam na delay.");
         printNoPower();
-        delay(180000);
-        if (voltage == 0)
+        delay(powerDelay);
+        Serial.println("Delay done");
+        if (getVoltage() == 0)
         {
             hasPower = false;
-            Serial.println("Voltage is 0.");
+            voltage = String(getVoltage());
+            Serial.println("Current voltage is: "+voltage);
             if(powerMessageSent == false){
                 sendMessagePower();
                 powerMessageSent = true;
@@ -235,6 +239,11 @@ void loop(void)
     else
     {
         printPowerOk();
+        if(powerMessageSent == true){
+            Serial.println("Zasilanie wrocilo");
+            sendMessagePowerBack();
+            powerMessageSent = false;
+        }
     }
     
     // Check received messages, delete messages
